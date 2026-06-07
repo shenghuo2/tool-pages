@@ -42,7 +42,7 @@ const theme = createTheme({
       paper: '#ffffff',
     },
     primary: {
-      main: '#176b66',
+      main: '#415D60',
       contrastText: '#ffffff',
     },
     secondary: {
@@ -50,7 +50,7 @@ const theme = createTheme({
     },
     text: {
       primary: '#1e2528',
-      secondary: '#667072',
+      secondary: '#5f7073',
     },
     divider: '#dfe4df',
   },
@@ -117,6 +117,8 @@ function App() {
   const pageCount = Math.max(1, Math.ceil(filteredEmotes.length / PAGE_SIZE))
   const currentPage = Math.min(page, pageCount)
   const pagedEmotes = filteredEmotes.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+  const displayedStart = filteredEmotes.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1
+  const displayedEnd = Math.min(currentPage * PAGE_SIZE, filteredEmotes.length)
 
   const copyEmote = async (emote) => {
     if (!navigator.clipboard?.writeText) {
@@ -238,8 +240,11 @@ function App() {
           <Box
             sx={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))',
-              gap: 2,
+              gridTemplateColumns: {
+                xs: 'repeat(2, minmax(0, 1fr))',
+                sm: 'repeat(auto-fill, minmax(190px, 1fr))',
+              },
+              gap: { xs: 1.25, sm: 2 },
             }}
           >
             {pagedEmotes.map((emote) => (
@@ -247,7 +252,7 @@ function App() {
                 <CardActionArea onClick={() => setSelected(emote)}>
                   <Box
                     sx={{
-                      height: 160,
+                      height: { xs: 118, sm: 160 },
                       display: 'grid',
                       placeItems: 'center',
                       bgcolor: '#f2f5f2',
@@ -260,16 +265,24 @@ function App() {
                       src={emotePath(emote.fileName)}
                       alt={emote.displayName}
                       loading="lazy"
-                      sx={{ maxWidth: '100%', maxHeight: 144, objectFit: 'contain' }}
+                      sx={{ maxWidth: '100%', maxHeight: { xs: 104, sm: 144 }, objectFit: 'contain' }}
                     />
                   </Box>
                 </CardActionArea>
-                <CardContent sx={{ p: 1.5 }}>
-                  <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
-                    <Typography fontWeight={800} noWrap title={emote.displayName}>
+                <CardContent sx={{ p: { xs: 1, sm: 1.5 } }}>
+                  <Box
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: 'minmax(0, 1fr) auto',
+                      alignItems: 'center',
+                      columnGap: 1,
+                      width: '100%',
+                    }}
+                  >
+                    <Typography fontWeight={800} noWrap title={emote.displayName} sx={{ minWidth: 0 }}>
                       {emote.displayName}
                     </Typography>
-                    <Stack direction="row" spacing={0.5} sx={{ flexShrink: 0 }}>
+                    <Stack direction="row" spacing={0.5} justifyContent="flex-end" sx={{ justifySelf: 'end' }}>
                       <Tooltip title="复制链接">
                         <IconButton
                           color="primary"
@@ -294,14 +307,17 @@ function App() {
                         </IconButton>
                       </Tooltip>
                     </Stack>
-                  </Stack>
+                  </Box>
                 </CardContent>
               </Card>
             ))}
           </Box>
 
-          {pageCount > 1 ? (
-            <Stack alignItems="center" sx={{ mt: 3 }}>
+          <Stack alignItems="center" spacing={1.25} sx={{ mt: 3 }}>
+            <Typography variant="body2" color="text.secondary">
+              已展示 {displayedStart}-{displayedEnd} / {filteredEmotes.length}
+            </Typography>
+            {pageCount > 1 ? (
               <Pagination
                 color="primary"
                 count={pageCount}
@@ -309,9 +325,17 @@ function App() {
                 onChange={(_, value) => setPage(value)}
                 showFirstButton
                 showLastButton
+                shape="rounded"
+                variant="outlined"
+                sx={{
+                  '& .MuiPaginationItem-root': {
+                    borderRadius: 1,
+                    minWidth: 34,
+                  },
+                }}
               />
-            </Stack>
-          ) : null}
+            ) : null}
+          </Stack>
         </Container>
 
         <Dialog open={Boolean(selected)} onClose={() => setSelected(null)} maxWidth="sm" fullWidth>
