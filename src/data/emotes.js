@@ -112,4 +112,4 @@ export const emotes = [
   { originalName: '驾驶', englishName: 'Driving', fileName: 'driving.gif', sourceFile: '驾驶.gif' },
 ]
 
-export const emotePath = (fileName) => `/emotes/${fileName}`
+export const emotePath = (fileName) => `${import.meta.env.BASE_URL}emotes/${fileName}`

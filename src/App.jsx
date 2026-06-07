@@ -6,32 +6,20 @@ import {
   Card,
   CardActionArea,
   CardContent,
-  Chip,
   Container,
   CssBaseline,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  Divider,
   IconButton,
   InputAdornment,
-  Link,
+  Pagination,
   Paper,
   Snackbar,
   Stack,
-  Tab,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Tabs,
   TextField,
   ThemeProvider,
-  ToggleButton,
-  ToggleButtonGroup,
   Toolbar,
   Tooltip,
   Typography,
@@ -40,13 +28,11 @@ import {
 import ClearIcon from '@mui/icons-material/Clear'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import DownloadIcon from '@mui/icons-material/Download'
-import FileCopyIcon from '@mui/icons-material/FileCopy'
 import ImageSearchIcon from '@mui/icons-material/ImageSearch'
-import LinkIcon from '@mui/icons-material/Link'
 import PasteIcon from '@mui/icons-material/ContentPaste'
 import SearchIcon from '@mui/icons-material/Search'
-import TableRowsIcon from '@mui/icons-material/TableRows'
-import { emotePath, emotes } from './data/emotes'
+import { emotePath } from './data/emotes'
+import { emoteSearchIndex } from './data/emoteSearchIndex'
 
 const theme = createTheme({
   palette: {
@@ -80,11 +66,6 @@ const theme = createTheme({
       lineHeight: 1.05,
       letterSpacing: 0,
     },
-    h2: {
-      fontSize: '1.5rem',
-      fontWeight: 800,
-      letterSpacing: 0,
-    },
     button: {
       fontWeight: 700,
       textTransform: 'none',
@@ -109,61 +90,53 @@ const theme = createTheme({
   },
 })
 
+const normalize = (value) => value.toLowerCase().replace(/[\s_-]+/g, '')
+const PAGE_SIZE = 24
+const GIF_CLIPBOARD_NOTICE = '由于系统限制，不能复制 GIF 到剪切板中，请下载到本地使用'
+
 function getAbsoluteUrl(fileName) {
   return new URL(emotePath(fileName), window.location.origin).toString()
 }
 
-function getCopyText(emote, format) {
-  const url = getAbsoluteUrl(emote.fileName)
-
-  if (format === 'markdown') {
-    return `![${emote.englishName}](${url})`
-  }
-
-  if (format === 'filename') {
-    return emote.fileName
-  }
-
-  return url
-}
-
 function App() {
   const [query, setQuery] = useState('')
-  const [tab, setTab] = useState('gallery')
-  const [copyFormat, setCopyFormat] = useState('url')
+  const [page, setPage] = useState(1)
   const [selected, setSelected] = useState(null)
   const [toast, setToast] = useState('')
 
   const filteredEmotes = useMemo(() => {
-    const keyword = query.trim().toLowerCase()
+    const keyword = normalize(query.trim())
 
     if (!keyword) {
-      return emotes
+      return emoteSearchIndex
     }
 
-    return emotes.filter((emote) => {
-      const haystack = [
-        emote.originalName,
-        emote.englishName,
-        emote.fileName,
-        emote.sourceFile,
-      ]
-        .join(' ')
-        .toLowerCase()
-
-      return haystack.includes(keyword)
-    })
+    return emoteSearchIndex.filter((emote) => emote.searchText.includes(keyword))
   }, [query])
 
-  const copyEmote = async (emote, format = copyFormat) => {
-    await navigator.clipboard.writeText(getCopyText(emote, format))
-    setToast(`已复制 ${emote.englishName}`)
+  const pageCount = Math.max(1, Math.ceil(filteredEmotes.length / PAGE_SIZE))
+  const currentPage = Math.min(page, pageCount)
+  const pagedEmotes = filteredEmotes.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+
+  const copyEmote = async (emote) => {
+    if (!navigator.clipboard?.writeText) {
+      setToast('当前浏览器不支持复制')
+      return
+    }
+
+    try {
+      await navigator.clipboard.writeText(getAbsoluteUrl(emote.fileName))
+      setToast(`已复制 ${emote.displayName} 链接。${GIF_CLIPBOARD_NOTICE}`)
+    } catch {
+      setToast('复制失败')
+    }
   }
 
   const pasteSearch = async () => {
     try {
       const text = await navigator.clipboard.readText()
       setQuery(text)
+      setPage(1)
       setToast('已粘贴')
     } catch {
       setToast('浏览器没有开放剪贴板读取权限')
@@ -185,15 +158,6 @@ function App() {
             <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 800 }}>
               shenghuo2 的捏捏表情包
             </Typography>
-            <Button
-              component={Link}
-              href="/emote-mapping.csv"
-              underline="none"
-              variant="outlined"
-              startIcon={<DownloadIcon />}
-            >
-              映射表
-            </Button>
           </Toolbar>
         </AppBar>
 
@@ -205,30 +169,27 @@ function App() {
             bgcolor: '#eef4ef',
           }}
         >
-          <Container maxWidth="xl" sx={{ py: { xs: 4, md: 6 } }}>
-            <Stack spacing={3}>
-              <Stack spacing={1} sx={{ maxWidth: 820 }}>
-                <Typography variant="h1">shenghuo2 的捏捏表情包</Typography>
-                <Typography color="text.secondary" sx={{ fontSize: { xs: 16, md: 18 } }}>
-                  {emotes.length} 个 GIF
-                </Typography>
-              </Stack>
-
+          <Container maxWidth="xl" sx={{ py: { xs: 2, md: 3 } }}>
+            <Stack spacing={2}>
               <Paper
                 elevation={0}
                 sx={{
-                  p: { xs: 1.5, md: 2 },
+                  p: { xs: 1.25, md: 1.5 },
                   border: 1,
                   borderColor: 'divider',
                   maxWidth: 980,
                 }}
               >
-                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ md: 'center' }}>
+                <Stack spacing={1.25}>
+                  <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ md: 'center' }}>
                   <TextField
                     fullWidth
                     value={query}
-                    onChange={(event) => setQuery(event.target.value)}
-                    placeholder="搜索中文名、英文名或文件名"
+                    onChange={(event) => {
+                      setQuery(event.target.value)
+                      setPage(1)
+                    }}
+                    placeholder="搜索"
                     size="small"
                     slotProps={{
                       input: {
@@ -246,7 +207,14 @@ function App() {
                             </Tooltip>
                             {query ? (
                               <Tooltip title="清空">
-                                <IconButton edge="end" onClick={() => setQuery('')} aria-label="清空">
+                                <IconButton
+                                  edge="end"
+                                  onClick={() => {
+                                    setQuery('')
+                                    setPage(1)
+                                  }}
+                                  aria-label="清空"
+                                >
                                   <ClearIcon fontSize="small" />
                                 </IconButton>
                               </Tooltip>
@@ -256,25 +224,10 @@ function App() {
                       },
                     }}
                   />
-
-                  <ToggleButtonGroup
-                    exclusive
-                    size="small"
-                    value={copyFormat}
-                    onChange={(_, value) => value && setCopyFormat(value)}
-                    aria-label="复制格式"
-                    sx={{ flexShrink: 0 }}
-                  >
-                    <ToggleButton value="url" aria-label="URL">
-                      <LinkIcon fontSize="small" />
-                    </ToggleButton>
-                    <ToggleButton value="markdown" aria-label="Markdown">
-                      <FileCopyIcon fontSize="small" />
-                    </ToggleButton>
-                    <ToggleButton value="filename" aria-label="文件名">
-                      <TableRowsIcon fontSize="small" />
-                    </ToggleButton>
-                  </ToggleButtonGroup>
+                  </Stack>
+                  <Typography variant="caption" color="text.secondary">
+                    {GIF_CLIPBOARD_NOTICE}
+                  </Typography>
                 </Stack>
               </Paper>
             </Stack>
@@ -282,146 +235,121 @@ function App() {
         </Box>
 
         <Container maxWidth="xl" sx={{ py: 3 }}>
-          <Tabs value={tab} onChange={(_, value) => setTab(value)} sx={{ mb: 3 }}>
-            <Tab value="gallery" label="预览" icon={<ImageSearchIcon />} iconPosition="start" />
-            <Tab value="mapping" label="映射" icon={<TableRowsIcon />} iconPosition="start" />
-          </Tabs>
-
-          {tab === 'gallery' ? (
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))',
-                gap: 2,
-              }}
-            >
-              {filteredEmotes.map((emote) => (
-                <Card key={emote.fileName} variant="outlined">
-                  <CardActionArea onClick={() => setSelected(emote)}>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))',
+              gap: 2,
+            }}
+          >
+            {pagedEmotes.map((emote) => (
+              <Card key={emote.fileName} variant="outlined">
+                <CardActionArea onClick={() => setSelected(emote)}>
+                  <Box
+                    sx={{
+                      height: 160,
+                      display: 'grid',
+                      placeItems: 'center',
+                      bgcolor: '#f2f5f2',
+                      borderBottom: 1,
+                      borderColor: 'divider',
+                    }}
+                  >
                     <Box
-                      sx={{
-                        height: 160,
-                        display: 'grid',
-                        placeItems: 'center',
-                        bgcolor: '#f2f5f2',
-                        borderBottom: 1,
-                        borderColor: 'divider',
-                      }}
-                    >
-                      <Box
-                        component="img"
-                        src={emotePath(emote.fileName)}
-                        alt={emote.englishName}
-                        loading="lazy"
-                        sx={{ maxWidth: '100%', maxHeight: 144, objectFit: 'contain' }}
-                      />
-                    </Box>
-                  </CardActionArea>
-                  <CardContent sx={{ p: 1.5 }}>
-                    <Stack spacing={1}>
-                      <Box>
-                        <Typography fontWeight={800} noWrap title={emote.englishName}>
-                          {emote.englishName}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" noWrap title={emote.originalName}>
-                          {emote.originalName}
-                        </Typography>
-                      </Box>
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <Chip size="small" label={emote.fileName.replace('.gif', '')} sx={{ maxWidth: 126 }} />
-                        <Tooltip title="复制">
-                          <IconButton
-                            color="primary"
-                            size="small"
-                            onClick={() => copyEmote(emote)}
-                            aria-label={`复制 ${emote.englishName}`}
-                          >
-                            <ContentCopyIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </Stack>
+                      component="img"
+                      src={emotePath(emote.fileName)}
+                      alt={emote.displayName}
+                      loading="lazy"
+                      sx={{ maxWidth: '100%', maxHeight: 144, objectFit: 'contain' }}
+                    />
+                  </Box>
+                </CardActionArea>
+                <CardContent sx={{ p: 1.5 }}>
+                  <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+                    <Typography fontWeight={800} noWrap title={emote.displayName}>
+                      {emote.displayName}
+                    </Typography>
+                    <Stack direction="row" spacing={0.5} sx={{ flexShrink: 0 }}>
+                      <Tooltip title="复制链接">
+                        <IconButton
+                          color="primary"
+                          size="small"
+                          onClick={() => copyEmote(emote)}
+                          aria-label={`复制 ${emote.displayName} 链接`}
+                        >
+                          <ContentCopyIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="下载">
+                        <IconButton
+                          color="primary"
+                          component="a"
+                          download={emote.fileName}
+                          href={emotePath(emote.fileName)}
+                          size="small"
+                          onClick={(event) => event.stopPropagation()}
+                          aria-label={`下载 ${emote.displayName}`}
+                        >
+                          <DownloadIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
                     </Stack>
-                  </CardContent>
-                </Card>
-              ))}
-            </Box>
-          ) : (
-            <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: '70vh' }}>
-              <Table stickyHeader size="small" aria-label="映射表">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>原译名</TableCell>
-                    <TableCell>英文译名</TableCell>
-                    <TableCell>英文文件名</TableCell>
-                    <TableCell>源文件名</TableCell>
-                    <TableCell align="right">复制</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filteredEmotes.map((emote) => (
-                    <TableRow key={emote.fileName} hover>
-                      <TableCell>{emote.originalName}</TableCell>
-                      <TableCell>{emote.englishName}</TableCell>
-                      <TableCell>{emote.fileName}</TableCell>
-                      <TableCell>{emote.sourceFile}</TableCell>
-                      <TableCell align="right">
-                        <Tooltip title="复制">
-                          <IconButton size="small" onClick={() => copyEmote(emote)} aria-label={`复制 ${emote.englishName}`}>
-                            <ContentCopyIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
+                  </Stack>
+                </CardContent>
+              </Card>
+            ))}
+          </Box>
+
+          {pageCount > 1 ? (
+            <Stack alignItems="center" sx={{ mt: 3 }}>
+              <Pagination
+                color="primary"
+                count={pageCount}
+                page={currentPage}
+                onChange={(_, value) => setPage(value)}
+                showFirstButton
+                showLastButton
+              />
+            </Stack>
+          ) : null}
         </Container>
 
         <Dialog open={Boolean(selected)} onClose={() => setSelected(null)} maxWidth="sm" fullWidth>
           {selected ? (
             <>
-              <DialogTitle>{selected.englishName}</DialogTitle>
+              <DialogTitle>{selected.displayName}</DialogTitle>
               <DialogContent>
-                <Stack spacing={2}>
+                <Box
+                  sx={{
+                    minHeight: 260,
+                    display: 'grid',
+                    placeItems: 'center',
+                    bgcolor: '#f2f5f2',
+                    border: 1,
+                    borderColor: 'divider',
+                    borderRadius: 1,
+                  }}
+                >
                   <Box
-                    sx={{
-                      minHeight: 260,
-                      display: 'grid',
-                      placeItems: 'center',
-                      bgcolor: '#f2f5f2',
-                      border: 1,
-                      borderColor: 'divider',
-                      borderRadius: 1,
-                    }}
-                  >
-                    <Box
-                      component="img"
-                      src={emotePath(selected.fileName)}
-                      alt={selected.englishName}
-                      sx={{ maxWidth: '100%', maxHeight: 360, objectFit: 'contain' }}
-                    />
-                  </Box>
-                  <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                    <Chip label={selected.originalName} />
-                    <Chip label={selected.fileName} variant="outlined" />
-                  </Stack>
-                  <Divider />
-                  <Typography variant="body2" color="text.secondary" sx={{ wordBreak: 'break-all' }}>
-                    {getAbsoluteUrl(selected.fileName)}
-                  </Typography>
-                </Stack>
+                    component="img"
+                    src={emotePath(selected.fileName)}
+                    alt={selected.displayName}
+                    sx={{ maxWidth: '100%', maxHeight: 360, objectFit: 'contain' }}
+                  />
+                </Box>
               </DialogContent>
               <DialogActions sx={{ px: 3, pb: 3 }}>
-                <Button startIcon={<LinkIcon />} onClick={() => copyEmote(selected, 'url')}>
-                  URL
+                <Button startIcon={<ContentCopyIcon />} onClick={() => copyEmote(selected)}>
+                  复制链接
                 </Button>
-                <Button startIcon={<FileCopyIcon />} onClick={() => copyEmote(selected, 'markdown')}>
-                  Markdown
-                </Button>
-                <Button variant="contained" startIcon={<ContentCopyIcon />} onClick={() => copyEmote(selected, 'filename')}>
-                  文件名
+                <Button
+                  component="a"
+                  download={selected.fileName}
+                  href={emotePath(selected.fileName)}
+                  variant="contained"
+                  startIcon={<DownloadIcon />}
+                >
+                  下载
                 </Button>
               </DialogActions>
             </>
