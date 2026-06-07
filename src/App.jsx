@@ -14,6 +14,7 @@ import {
   DialogTitle,
   IconButton,
   InputAdornment,
+  Link,
   Pagination,
   Paper,
   Snackbar,
@@ -315,7 +316,7 @@ function App() {
 
           <Stack alignItems="center" spacing={1.25} sx={{ mt: 3 }}>
             <Typography variant="body2" color="text.secondary">
-              已展示 {displayedStart}-{displayedEnd} / {filteredEmotes.length}
+              已展示 {displayedStart}-{displayedEnd} / 共 {filteredEmotes.length} 张
             </Typography>
             {pageCount > 1 ? (
               <Pagination
@@ -336,6 +337,16 @@ function App() {
               />
             ) : null}
           </Stack>
+        </Container>
+
+        <Container component="footer" maxWidth="xl" sx={{ mt: -1, pb: 1.5 }}>
+          <Typography sx={{ color: '#aab3b4', fontSize: 11, lineHeight: 1.4 }}>
+            © 使用{' '}
+            <Link href="https://emotelab.app/" target="_blank" rel="noreferrer" sx={{ color: '#8d9b9d' }}>
+              EmoteLab
+            </Link>
+            {' '}制作
+          </Typography>
         </Container>
 
         <Dialog open={Boolean(selected)} onClose={() => setSelected(null)} maxWidth="sm" fullWidth>
