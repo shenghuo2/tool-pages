@@ -8,9 +8,9 @@
 
 | 分支 | 工具 | 说明 |
 | --- | --- | --- |
-| `shenghuo2-nienie-emotes` | 捏捏表情包 | 表情包预览、搜索与使用页面。 |
-| `prompt-trans-and-edit` | Prompt 翻译与编辑 | 面向 prompt 文本的翻译、改写和编辑辅助页面。 |
-| `img-compare` | 图片对比 | 用于对比两张图片差异的小工具。 |
+| [`shenghuo2-nienie-emotes`](https://github.com/shenghuo2/tool-pages/tree/shenghuo2-nienie-emotes) | 捏捏表情包 | 表情包预览、搜索与使用页面。 |
+| [`prompt-trans-and-edit`](https://github.com/shenghuo2/tool-pages/tree/prompt-trans-and-edit) | Prompt 翻译与编辑 | 面向 prompt 文本的翻译、改写和编辑辅助页面。 |
+| [`img-compare`](https://github.com/shenghuo2/tool-pages/tree/img-compare) | 图片对比 | 用于对比两张图片差异的小工具。 |
 
 ## 本地结构
 
@@ -24,11 +24,7 @@ tool-pages/
   img-compare/
 ```
 
-`main/` 下直接放了指向这些本地工作目录的软链接，方便从主目录跳转，也方便在 GitHub 上看到各工具入口：
-
-- `shenghuo2-nienie-emotes` -> `../shenghuo2-nienie-emotes`
-- `prompt-trans-and-edit` -> `../prompt-trans-and-edit`
-- `img-compare` -> `../img-compare`
+GitHub 不支持通过软链接跳转到其他分支，因此线上入口使用上方表格里的分支链接。
 
 ## 开发
 
