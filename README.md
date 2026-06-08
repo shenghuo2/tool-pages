@@ -2,15 +2,17 @@
 
 `tool-pages` 收集 shenghuo2 日常使用的小工具。它们主要是用 AI 快速构建出来，用来满足自己的具体需求；如果网上没有找到合适、轻量、顺手的项目，就在这里单独做一个页面。
 
+`main` 分支是 shenghuo2 的实验室导航页，用相对路径跳转到各个工具页面。
+
 ## 分支与工具
 
-这个仓库按分支管理小工具：`main` 分支只放项目说明和索引，每个工具放在自己的分支里。
+这个仓库按分支管理小工具：`main` 分支只放项目说明和导航页，每个工具放在自己的分支里。
 
-| 分支 | 工具 | 说明 |
-| --- | --- | --- |
-| `shenghuo2-nienie-emotes` | 捏捏表情包 | 表情包预览、搜索与使用页面。 |
-| `prompt-trans-and-edit` | Prompt 翻译与编辑 | 面向 prompt 文本的翻译、改写和编辑辅助页面。 |
-| `img-compare` | 图片对比 | 用于对比两张图片差异的小工具。 |
+| 分支 | 导航路径 | 工具 | 说明 |
+| --- | --- | --- | --- |
+| `prompt-trans-and-edit` | `./sd-trans/` | `sd-trans` | 对于 SD 格式的 Prompt 接入大模型快速翻译、方便调整。 |
+| `img-compare` | `./img-compare/` | `img-compare` | 以叠加形式比较两张图片，对于分辨率不同的两张图片会进行缩放处理。 |
+| `shenghuo2-nienie-emotes` | `./emotes/` | `shenghuo2-nienie-emotes` | 使用 EmoteLab 生成的 OC 表情包合集。 |
 
 ## 本地结构
 
@@ -19,12 +21,12 @@
 ```text
 tool-pages/
   main/
-  shenghuo2-nienie-emotes/
-  prompt-trans-and-edit/
+  sd-trans/
   img-compare/
+  emotes/
 ```
 
-`main` 分支顶层使用 Git submodule/gitlink 指向各工具分支，因此 GitHub 会显示成 `目录名 @ commit`，可以直接跳到对应分支提交。
+`main` 分支顶层使用 Git submodule/gitlink 指向各工具分支，因此 GitHub 会显示成 `目录名 @ commit`，可以直接跳到对应分支提交。导航页中的工具入口使用相对路径，例如 `./img-compare/`。
 
 ## 开发
 
