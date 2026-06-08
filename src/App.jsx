@@ -333,6 +333,15 @@ function App() {
                     borderRadius: 1,
                     minWidth: 34,
                   },
+                  '& .MuiPaginationItem-root.Mui-selected': {
+                    bgcolor: 'primary.main',
+                    borderColor: 'primary.main',
+                    color: 'primary.contrastText',
+                  },
+                  '& .MuiPaginationItem-root.Mui-selected:hover': {
+                    bgcolor: '#354c4f',
+                    borderColor: '#354c4f',
+                  },
                 }}
               />
             ) : null}
