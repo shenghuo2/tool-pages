@@ -1,0 +1,14 @@
+[submodule "shenghuo2-nienie-emotes"]
+	path = shenghuo2-nienie-emotes
+	url = https://github.com/shenghuo2/tool-pages.git
+	branch = shenghuo2-nienie-emotes
+
+[submodule "prompt-trans-and-edit"]
+	path = prompt-trans-and-edit
+	url = https://github.com/shenghuo2/tool-pages.git
+	branch = prompt-trans-and-edit
+
+[submodule "img-compare"]
+	path = img-compare
+	url = https://github.com/shenghuo2/tool-pages.git
+	branch = img-compare

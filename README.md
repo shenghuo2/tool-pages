@@ -8,9 +8,9 @@
 
 | 分支 | 工具 | 说明 |
 | --- | --- | --- |
-| [`shenghuo2-nienie-emotes`](https://github.com/shenghuo2/tool-pages/tree/shenghuo2-nienie-emotes) | 捏捏表情包 | 表情包预览、搜索与使用页面。 |
-| [`prompt-trans-and-edit`](https://github.com/shenghuo2/tool-pages/tree/prompt-trans-and-edit) | Prompt 翻译与编辑 | 面向 prompt 文本的翻译、改写和编辑辅助页面。 |
-| [`img-compare`](https://github.com/shenghuo2/tool-pages/tree/img-compare) | 图片对比 | 用于对比两张图片差异的小工具。 |
+| `shenghuo2-nienie-emotes` | 捏捏表情包 | 表情包预览、搜索与使用页面。 |
+| `prompt-trans-and-edit` | Prompt 翻译与编辑 | 面向 prompt 文本的翻译、改写和编辑辅助页面。 |
+| `img-compare` | 图片对比 | 用于对比两张图片差异的小工具。 |
 
 ## 本地结构
 
@@ -24,7 +24,7 @@ tool-pages/
   img-compare/
 ```
 
-GitHub 不支持通过软链接跳转到其他分支，因此线上入口使用上方表格里的分支链接。
+`main` 分支顶层使用 Git submodule/gitlink 指向各工具分支，因此 GitHub 会显示成 `目录名 @ commit`，可以直接跳到对应分支提交。
 
 ## 开发
 
