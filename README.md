@@ -1,12 +1,18 @@
-# shenghuo2 的捏捏表情包
+# shenghuo2-nienie-emotes
 
-一个基于 Vite、React 和 MUI 的表情包预览与使用网站。
+使用 EmoteLab 生成的 OC 表情包合集。
 
 ## 内容
 
-- `public/emotes/`: 111 个英文 snake_case 文件名的 GIF 表情包。
+- `public/emotes/`: 英文 snake_case 文件名的 GIF 表情包。
 - `src/data/emotes.js`: 网站使用的内部搜索索引数据源。
 - `src/data/emoteSearchIndex.js`: 由脚本生成的中文、英文、拼音搜索索引。
+
+## 功能
+
+- 表情包预览和分页浏览。
+- 支持中文、英文、拼音搜索。
+- 支持复制表情包链接和下载使用。
 
 ## 开发
 
