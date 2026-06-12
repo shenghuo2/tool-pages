@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import {
   AppBar,
   Box,
@@ -91,13 +91,35 @@ const theme = createTheme({
 })
 
 const normalize = (value) => value.toLowerCase().replace(/[\s_-]+/g, '')
-const PAGE_SIZE = 24
+const TARGET_PAGE_SIZE = 24
 
 function App() {
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(1)
   const [selected, setSelected] = useState(null)
   const [toast, setToast] = useState('')
+  const [columns, setColumns] = useState(1)
+  const observerRef = useRef(null)
+
+  const gridRef = (node) => {
+    observerRef.current?.disconnect()
+    if (!node) {
+      return
+    }
+
+    const measure = () => {
+      const template = getComputedStyle(node).gridTemplateColumns
+      const count = template.split(' ').filter(Boolean).length
+      setColumns(Math.max(1, count))
+    }
+
+    measure()
+    observerRef.current = new ResizeObserver(measure)
+    observerRef.current.observe(node)
+  }
+
+  // Keep each page a whole number of rows so the last row is always full.
+  const pageSize = columns * Math.max(1, Math.round(TARGET_PAGE_SIZE / columns))
 
   const filteredEmotes = useMemo(() => {
     const keyword = normalize(query.trim())
@@ -109,11 +131,11 @@ function App() {
     return emoteSearchIndex.filter((emote) => emote.searchText.includes(keyword))
   }, [query])
 
-  const pageCount = Math.max(1, Math.ceil(filteredEmotes.length / PAGE_SIZE))
+  const pageCount = Math.max(1, Math.ceil(filteredEmotes.length / pageSize))
   const currentPage = Math.min(page, pageCount)
-  const pagedEmotes = filteredEmotes.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
-  const displayedStart = filteredEmotes.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1
-  const displayedEnd = Math.min(currentPage * PAGE_SIZE, filteredEmotes.length)
+  const pagedEmotes = filteredEmotes.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+  const displayedStart = filteredEmotes.length === 0 ? 0 : (currentPage - 1) * pageSize + 1
+  const displayedEnd = Math.min(currentPage * pageSize, filteredEmotes.length)
 
   const pasteSearch = async () => {
     try {
@@ -225,11 +247,12 @@ function App() {
             </Stack>
           ) : (
             <Box
+            ref={gridRef}
             sx={{
               display: 'grid',
               gridTemplateColumns: {
                 xs: 'repeat(2, minmax(0, 1fr))',
-                sm: 'repeat(auto-fill, minmax(190px, 1fr))',
+                sm: 'repeat(auto-fill, minmax(160px, 1fr))',
               },
               gap: { xs: 1.25, sm: 2 },
             }}
@@ -239,7 +262,7 @@ function App() {
                 <CardActionArea onClick={() => setSelected(emote)}>
                   <Box
                     sx={{
-                      height: { xs: 118, sm: 160 },
+                      height: { xs: 118, sm: 140 },
                       display: 'grid',
                       placeItems: 'center',
                       bgcolor: '#f2f5f2',
@@ -252,11 +275,11 @@ function App() {
                       src={emotePath(emote.fileName)}
                       alt={emote.displayName}
                       loading="lazy"
-                      sx={{ maxWidth: '100%', maxHeight: { xs: 104, sm: 144 }, objectFit: 'contain' }}
+                      sx={{ maxWidth: { xs: '100%', sm: '85%' }, maxHeight: { xs: 104, sm: 124 }, objectFit: 'contain' }}
                     />
                   </Box>
                 </CardActionArea>
-                <CardContent sx={{ p: { xs: 1, sm: 1.5 } }}>
+                <CardContent sx={{ p: { xs: 1, sm: 1.5 }, pl: { xs: 1, sm: 2 } }}>
                   <Box
                     sx={{
                       display: 'grid',
