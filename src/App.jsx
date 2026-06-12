@@ -238,7 +238,16 @@ function App() {
         </Box>
 
         <Container maxWidth="xl" sx={{ py: 3 }}>
-          <Box
+          {filteredEmotes.length === 0 ? (
+            <Stack alignItems="center" spacing={1} sx={{ py: 8, color: 'text.secondary' }}>
+              <ImageSearchIcon sx={{ fontSize: 48, color: 'divider' }} />
+              <Typography variant="h6" color="text.primary" fontWeight={700}>
+                没有找到相关表情包
+              </Typography>
+              <Typography variant="body2">换个关键词试试，支持中文、英文、拼音搜索</Typography>
+            </Stack>
+          ) : (
+            <Box
             sx={{
               display: 'grid',
               gridTemplateColumns: {
@@ -312,9 +321,11 @@ function App() {
                 </CardContent>
               </Card>
             ))}
-          </Box>
+            </Box>
+          )}
 
-          <Stack alignItems="center" spacing={1.25} sx={{ mt: 3 }}>
+          {filteredEmotes.length > 0 ? (
+            <Stack alignItems="center" spacing={1.25} sx={{ mt: 3 }}>
             <Typography variant="body2" color="text.secondary">
               已展示 {displayedStart}-{displayedEnd} / 共 {filteredEmotes.length} 张
             </Typography>
@@ -345,7 +356,8 @@ function App() {
                 }}
               />
             ) : null}
-          </Stack>
+            </Stack>
+          ) : null}
         </Container>
 
         <Container component="footer" maxWidth="xl" sx={{ mt: -1, pb: 1.5 }}>
@@ -402,6 +414,7 @@ function App() {
 
         <Snackbar
           open={Boolean(toast)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
           autoHideDuration={1800}
           onClose={() => setToast('')}
           message={toast}
