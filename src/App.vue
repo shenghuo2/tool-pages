@@ -25,7 +25,14 @@ const tools = [
   <main class="page-shell">
     <section class="intro-panel">
       <p class="eyebrow">
-        shenghuo2/tool-pages
+        <a
+          class="eyebrow-link"
+          href="https://github.com/shenghuo2/tool-pages"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          shenghuo2/tool-pages
+        </a>
       </p>
       <h1>shenghuo2的实验室</h1>
       <p class="summary">
