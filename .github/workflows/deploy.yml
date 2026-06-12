@@ -1,0 +1,36 @@
+name: Deploy emotes
+
+on:
+  push:
+    branches: [shenghuo2-nienie-emotes]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# 所有分支的部署共用一个组，串行写入 gh-pages，避免并发推送冲突。
+concurrency:
+  group: gh-pages-deploy
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      # build 会先跑 build:search 重新生成搜索索引，再 vite build。
+      - run: npm run build
+
+      # 部署到 gh-pages 的 emotes/ 子目录，保留其他分支已发布的产物。
+      - uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          destination_dir: emotes
+          keep_files: true
