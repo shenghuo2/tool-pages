@@ -1,7 +1,8 @@
 import React, { useRef, useState, useCallback, useEffect, useMemo } from "react"
-import { Upload, X } from "lucide-react"
+import { Box, IconButton, Paper, Stack, Tooltip, Typography } from "@mui/material"
+import UploadIcon from "@mui/icons-material/Upload"
+import CloseIcon from "@mui/icons-material/Close"
 import { useI18n } from "@/i18n"
-import { Button } from "@/components/ui/button"
 
 interface ImageCompareProps {
   leftSrc: string
@@ -258,11 +259,26 @@ const ImageCompare: React.FC<ImageCompareProps> = ({
   }, [rightDim, rightFileSize])
 
   return (
-    <div className="relative w-full h-full flex flex-col">
+    <Box sx={{ position: "relative", width: "100%", height: "100%", minHeight: 0, display: "flex", flexDirection: "column" }}>
       {/* Zoom info bar */}
-      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 bg-black/60 text-white text-xs px-3 py-1 rounded-full pointer-events-none select-none">
-        {Math.round(scaleDisplay * 100)}% · {t("zoomTip")}
-      </div>
+      <Paper
+        elevation={0}
+        sx={{
+          position: "absolute",
+          top: 12,
+          left: "50%",
+          transform: "translateX(-50%)",
+          zIndex: 20,
+          px: 1.5,
+          py: 0.5,
+          bgcolor: "rgba(30,37,40,0.72)",
+          color: "#fff",
+          pointerEvents: "none",
+          userSelect: "none",
+        }}
+      >
+        <Typography variant="caption">{Math.round(scaleDisplay * 100)}% · {t("zoomTip")}</Typography>
+      </Paper>
 
       {/* Labels */}
       <ImageLabel
@@ -281,9 +297,16 @@ const ImageCompare: React.FC<ImageCompareProps> = ({
       />
 
       {/* Comparison viewport */}
-      <div
+      <Box
         ref={containerRef}
-        className="relative flex-1 overflow-hidden select-none bg-neutral-900"
+        sx={{
+          position: "relative",
+          flex: 1,
+          minHeight: 0,
+          overflow: "hidden",
+          userSelect: "none",
+          bgcolor: "#1a1f22",
+        }}
         style={{ touchAction: "none", cursor: "grab" }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMovePassive}
@@ -291,52 +314,67 @@ const ImageCompare: React.FC<ImageCompareProps> = ({
         onWheel={onWheel}
       >
         {/* Right image (full, bottom layer) */}
-        <div ref={rightWrapRef} className="absolute inset-0 flex items-center justify-center">
-          <img
+        <Box ref={rightWrapRef} sx={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Box
+            component="img"
             ref={rightImgRef}
             src={rightSrc}
             alt="Right"
             draggable={false}
             onLoad={handleRightLoad}
-            className="max-w-none pointer-events-none will-change-transform"
+            sx={{ maxWidth: "none", pointerEvents: "none", willChange: "transform" }}
             style={{ transformOrigin: "center center" }}
           />
-        </div>
+        </Box>
 
         {/* Left image (clipped) — stretched to match right image size */}
-        <div
+        <Box
           ref={leftClipRef}
-          className="absolute inset-0 flex items-center justify-center"
+          sx={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}
           style={{ clipPath: "inset(0 50% 0 0)" }}
         >
-          <img
+          <Box
+            component="img"
             ref={leftImgRef}
             src={leftSrc}
             alt="Left"
             draggable={false}
             onLoad={handleLeftLoad}
-            className="max-w-none pointer-events-none will-change-transform"
+            sx={{ maxWidth: "none", pointerEvents: "none", willChange: "transform" }}
             style={{ transformOrigin: "center center" }}
           />
-        </div>
+        </Box>
 
         {/* Slider line */}
-        <div
+        <Box
           ref={sliderLineRef}
-          className="absolute top-0 bottom-0 z-10 pointer-events-none"
+          sx={{ position: "absolute", top: 0, bottom: 0, zIndex: 10, pointerEvents: "none" }}
           style={{ left: "50%" }}
         >
-          <div className="absolute inset-y-0 -translate-x-1/2 w-[2px] bg-white shadow-[0_0_4px_rgba(0,0,0,0.5)]" />
+          <Box sx={{ position: "absolute", top: 0, bottom: 0, transform: "translateX(-50%)", width: "2px", bgcolor: "#fff", boxShadow: "0 0 4px rgba(0,0,0,0.5)" }} />
           {/* Handle */}
-          <div
-            className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white shadow-lg flex items-center justify-center"
+          <Box
+            sx={{
+              position: "absolute",
+              top: "50%",
+              left: 0,
+              transform: "translate(-50%, -50%)",
+              width: 32,
+              height: 32,
+              borderRadius: "50%",
+              bgcolor: "#fff",
+              boxShadow: 3,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#52525b",
+            }}
           >
             <svg
               width="16"
               height="16"
               viewBox="0 0 16 16"
               fill="none"
-              className="text-neutral-600"
             >
               <path
                 d="M5 3L2 8L5 13M11 3L14 8L11 13"
@@ -346,10 +384,10 @@ const ImageCompare: React.FC<ImageCompareProps> = ({
                 strokeLinejoin="round"
               />
             </svg>
-          </div>
-        </div>
-      </div>
-    </div>
+          </Box>
+        </Box>
+      </Box>
+    </Box>
   )
 }
 
@@ -371,50 +409,58 @@ function ImageLabel({
   const { t } = useI18n()
 
   return (
-    <div
-      className={`absolute top-3 z-20 max-w-[calc(50%-1rem)] rounded bg-black/60 text-white ${
-        align === "left" ? "left-3" : "right-3"
-      }`}
+    <Paper
+      elevation={0}
+      sx={{
+        position: "absolute",
+        top: 12,
+        zIndex: 20,
+        maxWidth: "calc(50% - 1rem)",
+        left: align === "left" ? 12 : "auto",
+        right: align === "right" ? 12 : "auto",
+        bgcolor: "rgba(30,37,40,0.72)",
+        color: "#fff",
+      }}
     >
-      <div className="flex items-center gap-2 px-2 py-1">
-        <div className="min-w-0 text-xs select-none">
-          <p className="truncate">
+      <Stack direction="row" spacing={1} sx={{ px: 1, py: 0.5, alignItems: "center" }}>
+        <Box sx={{ minWidth: 0, userSelect: "none" }}>
+          <Typography variant="caption" noWrap sx={{ display: "block" }}>
             {label}
             {info}
-          </p>
-        </div>
-        <div className="flex items-center gap-1 shrink-0">
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label={t("replace")}
-            title={t("replace")}
-            className="h-6 w-6 text-neutral-300 hover:text-white"
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={(e) => {
-              e.stopPropagation()
-              onReplace()
-            }}
-          >
-            <Upload className="h-3.5 w-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label={t("remove")}
-            title={t("remove")}
-            className="h-6 w-6 text-neutral-300 hover:text-red-300"
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={(e) => {
-              e.stopPropagation()
-              onClear()
-            }}
-          >
-            <X className="h-3.5 w-3.5" />
-          </Button>
-        </div>
-      </div>
-    </div>
+          </Typography>
+        </Box>
+        <Stack direction="row" spacing={0.25} sx={{ flexShrink: 0 }}>
+          <Tooltip title={t("replace")}>
+            <IconButton
+              size="small"
+              aria-label={t("replace")}
+              sx={{ color: "rgba(255,255,255,0.78)", p: 0.35 }}
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation()
+                onReplace()
+              }}
+            >
+              <UploadIcon sx={{ fontSize: 17 }} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title={t("remove")}>
+            <IconButton
+              size="small"
+              aria-label={t("remove")}
+              sx={{ color: "rgba(255,255,255,0.78)", p: 0.35, '&:hover': { color: "#fca5a5" } }}
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation()
+                onClear()
+              }}
+            >
+              <CloseIcon sx={{ fontSize: 17 }} />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+      </Stack>
+    </Paper>
   )
 }
 
