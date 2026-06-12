@@ -20,7 +20,7 @@
 
 ```text
 tool-pages/
-  main/
+  index/
   sd-trans/
   img-compare/
   emotes/
