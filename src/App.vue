@@ -4,21 +4,18 @@ const tools = [
     title: 'sd-trans',
     href: './sd-trans/',
     description: '对于 SD 格式的 Prompt 接入大模型快速翻译、方便调整',
-    type: 'sakura',
     color: '#8338ec',
   },
   {
     title: 'img-compare',
     href: './img-compare/',
     description: '以叠加形式比较两张图片，对于分辨率不同的两张图片会进行缩放处理',
-    type: 'info',
     color: '#0077ff',
   },
   {
     title: 'shenghuo2-nienie-emotes',
     href: './emotes/',
     description: '使用 EmoteLab 生成的 OC 表情包合集',
-    type: 'primary',
     color: '#ff006e',
   },
 ]
@@ -59,6 +56,7 @@ const tools = [
           <a
             class="enter-button"
             :href="tool.href"
+            :aria-label="'进入 ' + tool.title"
           >
             进入
           </a>
