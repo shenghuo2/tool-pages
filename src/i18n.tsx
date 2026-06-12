@@ -33,6 +33,13 @@ const translations = {
 
 export type TranslationKey = keyof (typeof translations)["en"]
 
+// 根据浏览器语言检测默认语言：中文环境用中文，其余用英文。
+function detectLang(): Lang {
+  if (typeof navigator === "undefined") return "en"
+  const languages = navigator.languages ?? [navigator.language]
+  return languages.some((lang) => lang.toLowerCase().startsWith("zh")) ? "zh" : "en"
+}
+
 interface I18nContextType {
   lang: Lang
   setLang: (lang: Lang) => void
@@ -42,7 +49,7 @@ interface I18nContextType {
 const I18nContext = createContext<I18nContextType>(null!)
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
-  const [lang, setLang] = useState<Lang>("en")
+  const [lang, setLang] = useState<Lang>(detectLang)
 
   const t = useCallback(
     (key: TranslationKey): string => {
