@@ -1,0 +1,35 @@
+name: Deploy index
+
+on:
+  push:
+    branches: [index]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# 所有分支的部署共用一个组，串行写入 gh-pages，避免并发推送冲突。
+concurrency:
+  group: gh-pages-deploy
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+
+      # 导航页部署到站点根目录，并写入自定义域名 CNAME。
+      - uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          keep_files: true
+          cname: tools.shenghuo2.top
