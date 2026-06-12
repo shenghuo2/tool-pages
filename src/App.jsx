@@ -27,7 +27,6 @@ import {
   createTheme,
 } from '@mui/material'
 import ClearIcon from '@mui/icons-material/Clear'
-import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import DownloadIcon from '@mui/icons-material/Download'
 import ImageSearchIcon from '@mui/icons-material/ImageSearch'
 import PasteIcon from '@mui/icons-material/ContentPaste'
@@ -93,11 +92,6 @@ const theme = createTheme({
 
 const normalize = (value) => value.toLowerCase().replace(/[\s_-]+/g, '')
 const PAGE_SIZE = 24
-const GIF_CLIPBOARD_NOTICE = '由于系统限制，不能复制 GIF 到剪切板中，请下载到本地使用'
-
-function getAbsoluteUrl(fileName) {
-  return new URL(emotePath(fileName), window.location.origin).toString()
-}
 
 function App() {
   const [query, setQuery] = useState('')
@@ -120,20 +114,6 @@ function App() {
   const pagedEmotes = filteredEmotes.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
   const displayedStart = filteredEmotes.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1
   const displayedEnd = Math.min(currentPage * PAGE_SIZE, filteredEmotes.length)
-
-  const copyEmote = async (emote) => {
-    if (!navigator.clipboard?.writeText) {
-      setToast('当前浏览器不支持复制')
-      return
-    }
-
-    try {
-      await navigator.clipboard.writeText(getAbsoluteUrl(emote.fileName))
-      setToast(`已复制 ${emote.displayName} 链接。${GIF_CLIPBOARD_NOTICE}`)
-    } catch {
-      setToast('复制失败')
-    }
-  }
 
   const pasteSearch = async () => {
     try {
@@ -228,9 +208,6 @@ function App() {
                     }}
                   />
                   </Stack>
-                  <Typography variant="caption" color="text.secondary">
-                    {GIF_CLIPBOARD_NOTICE}
-                  </Typography>
                 </Stack>
               </Paper>
             </Stack>
@@ -293,16 +270,6 @@ function App() {
                       {emote.displayName}
                     </Typography>
                     <Stack direction="row" spacing={0.5} justifyContent="flex-end" sx={{ justifySelf: 'end' }}>
-                      <Tooltip title="复制链接">
-                        <IconButton
-                          color="primary"
-                          size="small"
-                          onClick={() => copyEmote(emote)}
-                          aria-label={`复制 ${emote.displayName} 链接`}
-                        >
-                          <ContentCopyIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
                       <Tooltip title="下载">
                         <IconButton
                           color="primary"
@@ -395,9 +362,6 @@ function App() {
                 </Box>
               </DialogContent>
               <DialogActions sx={{ px: 3, pb: 3 }}>
-                <Button startIcon={<ContentCopyIcon />} onClick={() => copyEmote(selected)}>
-                  复制链接
-                </Button>
                 <Button
                   component="a"
                   download={selected.fileName}
