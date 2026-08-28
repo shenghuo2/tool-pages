@@ -2,6 +2,7 @@ import React, { useRef, useState, useCallback, useEffect, useMemo } from "react"
 import { Box, IconButton, Paper, Stack, Tooltip, Typography } from "@mui/material"
 import UploadIcon from "@mui/icons-material/Upload"
 import CloseIcon from "@mui/icons-material/Close"
+import Panzoom, { type PanzoomObject } from "@panzoom/panzoom"
 import { useI18n } from "@/i18n"
 
 interface ImageCompareProps {
@@ -47,19 +48,14 @@ const ImageCompare: React.FC<ImageCompareProps> = ({
   const { t } = useI18n()
   const containerRef = useRef<HTMLDivElement>(null)
   const sliderLineRef = useRef<HTMLDivElement>(null)
+  const panzoomPlaneRef = useRef<HTMLDivElement>(null)
+  const panzoomRef = useRef<PanzoomObject | null>(null)
 
-  // Use refs for high-frequency mutable state to avoid re-renders
+  // Keep comparison-slider state outside React's render cycle.
   const stateRef = useRef({
     sliderPos: 50,
-    scale: 1,
-    panX: 0,
-    panY: 0,
     isDragging: false,
     isPanning: false,
-    panStartX: 0,
-    panStartY: 0,
-    panOffsetX: 0,
-    panOffsetY: 0,
   })
   const rafId = useRef(0)
 
@@ -79,19 +75,8 @@ const ImageCompare: React.FC<ImageCompareProps> = ({
   const rightImgRef = useRef<HTMLImageElement>(null)
   const leftImgRef = useRef<HTMLImageElement>(null)
 
-  const applyTransform = useCallback(() => {
+  const applyComparisonPosition = useCallback(() => {
     const s = stateRef.current
-    const transform = `translate(${s.panX}px, ${s.panY}px) scale(${s.scale})`
-    const rendering = s.scale > 2 ? "pixelated" : "auto"
-
-    if (rightImgRef.current) {
-      rightImgRef.current.style.transform = transform
-      rightImgRef.current.style.imageRendering = rendering
-    }
-    if (leftImgRef.current) {
-      leftImgRef.current.style.transform = transform
-      leftImgRef.current.style.imageRendering = rendering
-    }
     if (leftClipRef.current) {
       leftClipRef.current.style.clipPath = `inset(0 ${100 - s.sliderPos}% 0 0)`
     }
@@ -130,9 +115,9 @@ const ImageCompare: React.FC<ImageCompareProps> = ({
     if (rafId.current) return
     rafId.current = requestAnimationFrame(() => {
       rafId.current = 0
-      applyTransform()
+      applyComparisonPosition()
     })
-  }, [applyTransform])
+  }, [applyComparisonPosition])
 
   const onPointerDown = useCallback(
     (e: React.PointerEvent) => {
@@ -158,12 +143,8 @@ const ImageCompare: React.FC<ImageCompareProps> = ({
 
       // Otherwise → pan
       s.isPanning = true
-      s.panStartX = e.clientX
-      s.panStartY = e.clientY
-      s.panOffsetX = s.panX
-      s.panOffsetY = s.panY
       e.currentTarget.setPointerCapture(e.pointerId)
-      e.preventDefault()
+      panzoomRef.current?.handleDown(e.nativeEvent)
     },
     [updateSlider, scheduleRaf]
   )
@@ -172,9 +153,7 @@ const ImageCompare: React.FC<ImageCompareProps> = ({
     (e: React.PointerEvent) => {
       const s = stateRef.current
       if (s.isPanning) {
-        s.panX = s.panOffsetX + (e.clientX - s.panStartX)
-        s.panY = s.panOffsetY + (e.clientY - s.panStartY)
-        scheduleRaf()
+        panzoomRef.current?.handleMove(e.nativeEvent)
         return
       }
       if (s.isDragging) {
@@ -185,7 +164,9 @@ const ImageCompare: React.FC<ImageCompareProps> = ({
     [updateSlider, scheduleRaf]
   )
 
-  const onPointerUp = useCallback(() => {
+  const onPointerUp = useCallback((e: React.PointerEvent) => {
+    // Always forward pointer completion so multi-touch pointers are cleared.
+    panzoomRef.current?.handleUp(e.nativeEvent)
     stateRef.current.isDragging = false
     stateRef.current.isPanning = false
   }, [])
@@ -193,13 +174,9 @@ const ImageCompare: React.FC<ImageCompareProps> = ({
   const onWheel = useCallback(
     (e: React.WheelEvent) => {
       e.preventDefault()
-      const s = stateRef.current
-      const factor = e.deltaY > 0 ? 0.9 : 1.1
-      s.scale = Math.max(0.1, Math.min(20, s.scale * factor))
-      setScaleDisplay(s.scale)
-      scheduleRaf()
+      panzoomRef.current?.zoomWithWheel(e.nativeEvent)
     },
-    [scheduleRaf]
+    []
   )
 
   // Cursor style: col-resize near slider, grab elsewhere
@@ -218,19 +195,52 @@ const ImageCompare: React.FC<ImageCompareProps> = ({
     [onPointerMove]
   )
 
+  // Panzoom owns the gesture math and keeps the point under the cursor fixed
+  // while zooming. Its transform is mirrored to both comparison images.
+  useEffect(() => {
+    const element = panzoomPlaneRef.current
+    if (!element) return
+
+    const panzoom = Panzoom(element, {
+      minScale: 0.1,
+      maxScale: 20,
+      step: 0.3,
+      noBind: true,
+      pinchAndPan: true,
+      setTransform: (target, { x, y, scale }) => {
+        const transform = `scale(${scale}) translate(${x}px, ${y}px)`
+        const rendering = scale > 2 ? "pixelated" : "auto"
+
+        target.style.transform = transform
+        for (const ref of [rightImgRef, leftImgRef]) {
+          if (ref.current) {
+            ref.current.style.transform = transform
+            ref.current.style.imageRendering = rendering
+          }
+        }
+        setScaleDisplay(scale)
+      },
+    })
+
+    panzoomRef.current = panzoom
+    return () => {
+      panzoom.destroy()
+      panzoom.resetStyle()
+      panzoomRef.current = null
+    }
+  }, [])
+
   // Reset pan/zoom when images change
   useEffect(() => {
     const s = stateRef.current
-    s.scale = 1
-    s.panX = 0
-    s.panY = 0
     s.sliderPos = 50
+    panzoomRef.current?.reset({ animate: false })
     setScaleDisplay(1)
     setLeftDim({ w: 0, h: 0 })
     setRightDim({ w: 0, h: 0 })
     // Apply after reset
-    requestAnimationFrame(() => applyTransform())
-  }, [leftSrc, rightSrc, applyTransform])
+    requestAnimationFrame(() => applyComparisonPosition())
+  }, [leftSrc, rightSrc, applyComparisonPosition])
 
   // Set initial size on display images once displaySize is known
   useEffect(() => {
@@ -311,8 +321,16 @@ const ImageCompare: React.FC<ImageCompareProps> = ({
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMovePassive}
         onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
         onWheel={onWheel}
       >
+        {/* Full-size gesture plane gives Panzoom a stable viewport coordinate system. */}
+        <Box
+          ref={panzoomPlaneRef}
+          aria-hidden="true"
+          sx={{ position: "absolute", inset: 0, pointerEvents: "none" }}
+        />
+
         {/* Right image (full, bottom layer) */}
         <Box ref={rightWrapRef} sx={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <Box
