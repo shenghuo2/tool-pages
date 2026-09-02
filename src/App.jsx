@@ -60,6 +60,17 @@ function getSystemMode() {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
+function withoutTrailingSlashes(url) {
+  return url.trim().replace(/\/+$/, '')
+}
+
+function getChatCompletionsEndpoint(apiProvider, apiBaseUrl, customEndpoint) {
+  if (apiProvider === 'custom') return withoutTrailingSlashes(customEndpoint)
+
+  const baseUrl = withoutTrailingSlashes(apiBaseUrl)
+  return `${baseUrl}${baseUrl.endsWith('/v1') ? '' : '/v1'}/chat/completions`
+}
+
 function App() {
   const [inputText, setInputText] = useState('')
   const [tags, setTags] = useState([])
@@ -107,7 +118,7 @@ function App() {
     return () => systemTheme.removeEventListener('change', handleSystemChange)
   }, [theme])
 
-  const getApiEndpoint = () => (apiProvider === 'openai' ? `${apiBaseUrl}/v1/chat/completions` : customEndpoint)
+  const getApiEndpoint = () => getChatCompletionsEndpoint(apiProvider, apiBaseUrl, customEndpoint)
 
   const parseTags = useCallback((text) => {
     if (!text.trim()) return []
@@ -137,21 +148,28 @@ function App() {
       .replace('{{target_language}}', targetLanguage)
       .replace('{{text}}', text)
 
-    const response = await fetch(getApiEndpoint(), {
-      method: 'POST',
-      mode: 'cors',
-      credentials: 'omit',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model,
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.3,
-        stream: false,
-      }),
-    })
+    let response
+    try {
+      response = await fetch(getApiEndpoint(), {
+        method: 'POST',
+        credentials: 'omit',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.3,
+          stream: false,
+        }),
+      })
+    } catch (error) {
+      if (error instanceof TypeError) {
+        throw new Error('浏览器无法访问该 API。请确认地址正确且不以 / 结尾；若服务端未开启 CORS，需要在服务端或自己部署的代理中允许此站点。')
+      }
+      throw error
+    }
 
     if (!response.ok) {
       const errorText = await response.text()
@@ -386,9 +404,9 @@ function SettingsDialog({
             </Select>
           </FormControl>
           {apiProvider === 'openai' ? (
-            <TextField label="API 基础 URL" value={apiBaseUrl} onChange={(event) => setApiBaseUrl(event.target.value)} placeholder="https://api.openai.com" fullWidth />
+            <TextField label="API 基础 URL" value={apiBaseUrl} onChange={(event) => setApiBaseUrl(event.target.value)} placeholder="https://api.openai.com" helperText="可填 https://api.example.com 或 https://api.example.com/v1" fullWidth />
           ) : (
-            <TextField label="完整 API Endpoint" value={customEndpoint} onChange={(event) => setCustomEndpoint(event.target.value)} placeholder="https://your-api.com/v1/chat/completions" fullWidth />
+            <TextField label="完整 API Endpoint" value={customEndpoint} onChange={(event) => setCustomEndpoint(event.target.value)} placeholder="https://your-api.com/v1/chat/completions" helperText="不支持浏览器跨域的服务需要在服务端配置 CORS" fullWidth />
           )}
           <TextField label="API Key" type="password" value={apiKey} onChange={(event) => setApiKey(event.target.value)} placeholder="sk-..." fullWidth />
           <TextField label="模型" value={model} onChange={(event) => setModel(event.target.value)} placeholder="gpt-4o-mini" fullWidth />
